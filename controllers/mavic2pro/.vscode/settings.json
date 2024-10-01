@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "inertial_unit.h": "c",
+        "gyro.h": "c",
+        "gps.h": "c",
+        "compass.h": "c",
+        "camera.h": "c",
+        "limits.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

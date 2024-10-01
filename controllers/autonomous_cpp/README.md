@@ -1,0 +1,1 @@
+# auto-mavic2pro
