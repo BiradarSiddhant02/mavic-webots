@@ -1,67 +1,60 @@
 from controller import Robot, Camera, GPS, InertialUnit, Motor, LED
-from typing import Tuple
-
-from constants import (K_VERTICAL_THRUST, K_VERTICAL_OFFSET,
-                       K_VERTICAL_P, K_VERTICAL_I, K_VERTICAL_D,
-                       K_ROLL_P, K_PITCH_P, MAX_SIMULATION_TIME, MAX_MOTOR_VELOCITY)
+from typing import Tuple, List
 
 class Mavic:
     def __init__(self):
-        
-        ## initialize Robot
+        # Initialize the Robot
         self.drone = Robot()
         self.timestep = int(self.drone.getBasicTimeStep())
 
-        ## Get Camera
+        # Enable Camera
         self.camera = self.drone.getDevice("camera")
         self.camera.enable(self.timestep)
 
-        ## Get IMU
+        # Enable IMU (Inertial Measurement Unit)
         self.imu = self.drone.getDevice("inertial unit")
         self.imu.enable(self.timestep)
 
-        ## Get gyro
+        # Enable Gyroscope
         self.gyro = self.drone.getDevice("gyro")
         self.gyro.enable(self.timestep)
-        
-        ## Get GPS
+
+        # Enable GPS
         self.gps = self.drone.getDevice("gps")
         self.gps.enable(self.timestep)
 
-        ## Get Propellers
-        self.front_left_motor = self.drone.getDevice("front left propeller")
-        self.front_right_motor = self.drone.getDevice("front right propeller")
-        self.rear_left_motor = self.drone.getDevice("rear left propeller")
-        self.rear_right_motor = self.drone.getDevice("rear right propeller")
-
-        self.motors = [
-            self.front_left_motor,
-            self.front_right_motor,
-            self.rear_left_motor,
-            self.rear_right_motor
+        # Initialize Propellers (Motors)
+        motor_names = [
+            "front left propeller", "front right propeller", 
+            "rear left propeller", "rear right propeller"
         ]
-
+        
+        self.motors = [self.drone.getDevice(motor_name) for motor_name in motor_names]
+        
         for motor in self.motors:
-            motor.setPosition(float('inf'))  # Set motors to velocity mode
-            motor.setVelocity(1.0)  # Initial velocity for motors
+            motor.setPosition(float('inf'))  # Set motors to velocity control mode
+            motor.setVelocity(0.0)  # Initialize motor velocity to zero
 
     def get_imu_values(self) -> Tuple[float, float, float]:
+        """Returns the roll, pitch, and yaw values from the IMU."""
         return self.imu.getRollPitchYaw()
-    
+
     def get_gps_values(self) -> Tuple[float, float, float]:
+        """Returns the x, y, and z coordinates from the GPS."""
         return self.gps.getValues()
-    
+
     def get_gyro_values(self) -> Tuple[float, float, float]:
+        """Returns the angular velocity around x, y, and z axes from the gyro."""
         return self.gyro.getValues()
-    
+
     def get_time(self) -> float:
+        """Returns the current simulation time."""
         return self.drone.getTime()
-    
-    def set_rotor_speed(self, speed: Tuple[float, float, float, float]) -> None:
-        fl_speed, fr_speed, rl_speed, rr_speed = speed
 
-        self.front_left_motor.setVelocity(fl_speed)
-        self.front_right_motor.setVelocity(fr_speed)
-        self.rear_left_motor.setVelocity(rl_speed)
-        self.rear_right_motor.setVelocity(rr_speed)
+    def set_rotor_speed(self, speeds: Tuple[float, float, float, float]) -> None:
+        """Sets the velocity for each rotor."""
+        for motor, speed in zip(self.motors, speeds):
+            motor.setVelocity(speed)
 
+    def get_image(self) -> List[List[List[int]]]:
+        return self.camera.getImage()

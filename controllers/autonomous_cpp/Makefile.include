@@ -131,7 +131,7 @@ endif
 
 # compiler
 ifeq ($(CC),cc)
- CC = gcc
+ CC = g++
 endif
 
 # compute the current directory, the CURDIR variable may be already set
