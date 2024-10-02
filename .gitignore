@@ -1,4 +1,6 @@
 build
+build/emcc
+build/release
 .vscode
 outputs
 images

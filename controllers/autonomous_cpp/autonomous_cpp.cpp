@@ -2,133 +2,113 @@
 #include <vector>
 #include <tuple>
 #include <cmath>
-#include <algorithm> // For std::clamp
+#include <algorithm>
+#include <cstring>
 
 #include <Mavic.hpp>
 #include <constants.hpp>
 
-#include <webots/Robot.hpp>
-#include <webots/Camera.hpp>
-#include <webots/GPS.hpp>
-#include <webots/Gyro.hpp>
-#include <webots/Motor.hpp>
-#include <webots/InertialUnit.hpp>
-
-double altitude_pid(
-    double target_altitude,
-    double current_altitude,
-    double delta_time,
-    double* integral_altitude_error,
-    double* previous_altitude_error
-) {
-
-    // Compute the error between the target altitude and the current altitude
+double altitude_pid(double target_altitude, double current_altitude, double delta_time, 
+                    double &integral_altitude_error, double &previous_altitude_error)
+{
     double altitude_error = target_altitude - current_altitude;
+    integral_altitude_error += altitude_error * delta_time;
+    double derivative_altitude_error = (altitude_error - previous_altitude_error) / delta_time;
 
-    // Update the integral of the error
-    *integral_altitude_error += altitude_error * delta_time;
+    double control_signal = K_VERTICAL_P * altitude_error + 
+                            K_VERTICAL_I * integral_altitude_error + 
+                            K_VERTICAL_D * derivative_altitude_error;
 
-    // Compute the derivative of the error
-    double derivative_altitude_error = (altitude_error - *previous_altitude_error) / delta_time;
-
-    // Compute the control signal using PID formula
-    double control_signal = K_VERTICAL_P * altitude_error + K_VERTICAL_I * (*integral_altitude_error) + K_VERTICAL_D * derivative_altitude_error;
-
-    // Update the previous altitude error
-    *previous_altitude_error = altitude_error;
+    previous_altitude_error = altitude_error;
 
     return control_signal;
 }
 
-int main() {
-    Mavic* mavic = new Mavic();
+void print_vec(const double *vec, size_t size)
+{
+    for (size_t i = 0; i < size; ++i)
+    {
+        std::cout << vec[i] << " ";
+    }
+    std::cout << std::endl;
+}
 
-    // Declare variables outside the loop
-    int current_altitude_index = 0;
-    double altitudes[4] = {1., 2., 3., 4.};
-    double target_altitude = altitudes[current_altitude_index];
+void print_image(const unsigned char *image, int width, int height)
+{
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            std::cout << static_cast<int>(image[i * width + j]) << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
-    double change_time = mavic->get_time();
+int main()
+{
+    std::cout << "[INFO] Initializing Mavic object." << std::endl;
+    Mavic mavic;
+    std::cout << "[INFO] Initialized Mavic object." << std::endl;
 
-    // PID control variables
+    while (wb_robot_step(mavic.timestep) != -1)
+    {
+        if (wb_robot_get_time() > 1.0)
+            break;
+    }
+
+    const char* filename = "test.png";
+    mavic.save_image(filename, 100);
+
+    double target_altitude = 1.0;
     double integral_altitude_error = 0.0;
     double previous_altitude_error = 0.0;
 
-    // Sensor values
-    const double* imu_values;
-    const double* gps_values;
+    const double timestep_seconds = mavic.timestep / 1000.0;
 
-    // Control inputs
-    double roll, pitch, roll_input, pitch_input, yaw_input;
-    double current_altitude;
-    double control_signal;
-
-    while (true) {
-        double current_time = mavic->get_time();
-
-        // Check if it is time to change altitude
-        if (current_time - change_time >= 10) {
-            current_altitude_index = (current_altitude_index + 1) % (sizeof(altitudes) / sizeof(double));
-            target_altitude = altitudes[current_altitude_index];
-            change_time = current_time;
+    // Main loop
+    while (mavic.robot_step() != -1)
+    {
+        const double time = mavic.get_time();
+        if (time >= MAX_SIMULATION_TIME)
+        {
+            break;
         }
 
-        // Read Sensor values
-        imu_values = mavic->get_imu_values();
-        gps_values = mavic->get_gps_values();
+        const double *imu_values = mavic.get_imu_values();
+        double roll = imu_values[0];
+        double pitch = imu_values[1];
 
-        // Calculate roll, pitch and yaw inputs
-        roll = imu_values[0];
-        pitch = imu_values[1];
-        roll_input = K_ROLL_P * std::clamp(roll, -1.0, 1.0);
-        pitch_input = K_PITCH_P * std::clamp(pitch, -1.0, 1.0);
-        yaw_input = 0.0; // Assuming yaw input remains constant or is calculated elsewhere
+        const double *location = mavic.get_gps_values();
+        double altitude = location[2];
 
-        current_altitude = gps_values[2]; // Get the altitude from GPS data
+        double roll_velocity = mavic.get_gyro_values()[0];
+        double pitch_velocity = mavic.get_gyro_values()[1];
 
-        control_signal = altitude_pid(
-            target_altitude,
-            current_altitude,
-            mavic->timestep / 1000.0,
-            &integral_altitude_error,
-            &previous_altitude_error
-        );
+        // No yaw disturbances used, so it remains zero
+        double yaw_disturbance = 0.0;
 
-        // Motor control calculations
-        double front_left_motor_input = std::clamp(
-            K_VERTICAL_THRUST + control_signal - roll_input + pitch_input - yaw_input,
-            -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED
-        );
+        // PID controller for altitude
+        double vertical_input = altitude_pid(target_altitude, altitude, timestep_seconds, 
+                                             integral_altitude_error, previous_altitude_error);
 
-        double front_right_motor_input = std::clamp(
-            K_VERTICAL_THRUST + control_signal + roll_input + pitch_input + yaw_input,
-            -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED
-        );
+        // Roll and pitch inputs with clamped values
+        double roll_input = K_ROLL_P * std::clamp(roll, -1.0, 1.0) + roll_velocity;
+        double pitch_input = K_PITCH_P * std::clamp(pitch, -1.0, 1.0) + pitch_velocity;
 
-        double rear_left_motor_input = std::clamp(
-            K_VERTICAL_THRUST + control_signal - roll_input - pitch_input + yaw_input,
-            -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED
-        );
+        // Motor inputs, simplified calculations
+        double base_thrust = K_VERTICAL_THRUST + vertical_input;
 
-        double rear_right_motor_input = std::clamp(
-            K_VERTICAL_THRUST + control_signal + roll_input - pitch_input - yaw_input,
-            -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED
-        );
+        double front_left_motor_input = std::clamp(base_thrust - roll_input + pitch_input - yaw_disturbance, -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
+        double front_right_motor_input = std::clamp(base_thrust + roll_input + pitch_input + yaw_disturbance, -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
+        double rear_left_motor_input = std::clamp(base_thrust - roll_input - pitch_input + yaw_disturbance, -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
+        double rear_right_motor_input = std::clamp(base_thrust + roll_input - pitch_input - yaw_disturbance, -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
 
-        const double rotor_speeds[4] = {
-            front_left_motor_input,
-            front_right_motor_input,
-            rear_left_motor_input,
-            rear_right_motor_input
-        };
+        const double speeds[4] = { front_left_motor_input, front_right_motor_input, rear_left_motor_input, rear_right_motor_input };
 
-        mavic->set_rotor_speed(rotor_speeds);
+        mavic.set_motor_speed(speeds);
 
-        // Further processing for rotor speeds can be added here
     }
-
-    // Clean up
-    delete mavic;
 
     return 0;
 }

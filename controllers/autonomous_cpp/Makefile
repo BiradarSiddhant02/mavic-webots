@@ -21,6 +21,7 @@
 CXX_SOURCES = autonomous_cpp.cpp Mavic.cpp
 INCLUDE = -I"include/" -I"/usr/local/webots/include/controller/cpp/"
 LFLAGS = -Wall
+USE_C_API = true
 
 ### Do not modify: this includes Webots global Makefile.include
 null :=

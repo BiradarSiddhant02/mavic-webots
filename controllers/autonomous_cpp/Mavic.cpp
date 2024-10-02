@@ -1,79 +1,99 @@
+// MAVIC_CPP
+
 #include "Mavic.hpp"
 
 #include <iostream>
 #include <tuple>
 #include <limits>
 
-#include <webots/Robot.hpp>
-#include <webots/Camera.hpp>
-#include <webots/GPS.hpp>
-#include <webots/Gyro.hpp>
-#include <webots/InertialUnit.hpp>
+#include <webots/robot.h>
+#include <webots/camera.h>
+#include <webots/gps.h>
+#include <webots/gyro.h>
+#include <webots/motor.h>
+#include <webots/inertial_unit.h>
 
 Mavic::Mavic() {
-    // Initialize Robot
-    timestep = getBasicTimeStep();
 
-    // Get Camera
-    camera = getCamera("camera");
-    camera->enable(timestep);
+    // ---Initialize robot and get the timestep---
+    wb_robot_init();
+    timestep = (int)wb_robot_get_basic_time_step();
 
-    // Get IMU
-    imu = getInertialUnit("inertial unit");
-    imu->enable(timestep);
+    // ---Initialize all the sensors---
+    // Camera
+    camera = wb_robot_get_device("camera");
+    wb_camera_enable(camera, timestep);
+    std::cout<<"[INFO] Got Camera"<<std::endl;
 
-    // Get Gyro
-    gyro = getGyro("gyro");
-    gyro->enable(timestep);
+    // GPS
+    gps = wb_robot_get_device("gps");
+    wb_gps_enable(gps, timestep);
+    std::cout<<"[INFO] Got GPS"<<std::endl;
 
-    // Get GPS
-    gps = getGPS("gps");
-    gps->enable(timestep);
+    // Gyro
+    gyro = wb_robot_get_device("gyro");
+    wb_gyro_enable(gyro, timestep);
+    std::cout<<"[INFO] Got Gyro"<<std::endl;
 
-    // Get Propellers
-    front_left_motor = getMotor("front left propeller");
-    front_left_motor->setPosition(std::numeric_limits<double>::infinity());
-    front_left_motor->setVelocity(1.);
+    // IMU
+    imu = wb_robot_get_device("inertial unit");
+    wb_inertial_unit_enable(imu, timestep);
+    std::cout<<"[INFO] Got IMU"<<std::endl;
 
-    front_right_motor = getMotor("front right propeller");
-    front_right_motor->setPosition(std::numeric_limits<double>::infinity());
-    front_right_motor->setVelocity(1.);
-
-    rear_left_motor = getMotor("rear left propeller");
-    rear_left_motor->setPosition(std::numeric_limits<double>::infinity());
-    rear_left_motor->setVelocity(1.);
-
-    rear_right_motor = getMotor("rear right propeller");
-    rear_right_motor->setPosition(std::numeric_limits<double>::infinity());
-    rear_left_motor->setVelocity(1.);
+    // ---Initialize all motors---
+    front_left_motor = wb_robot_get_device("front left propeller");
+    wb_motor_set_position(front_left_motor, INFINITY);
+    wb_motor_set_velocity(front_left_motor, 1);
+    std::cout<<"[INFO] Got front left motor"<<std::endl;
+    
+    front_right_motor = wb_robot_get_device("front right propeller");
+    wb_motor_set_position(front_right_motor, INFINITY);
+    wb_motor_set_velocity(front_right_motor, 1);
+    std::cout<<"[INFO] Got front right motor"<<std::endl;
+    
+    rear_left_motor = wb_robot_get_device("rear left propeller");
+    wb_motor_set_position(rear_left_motor, INFINITY);
+    wb_motor_set_velocity(rear_left_motor, 1);
+    std::cout<<"[INFO] Got rear left motor"<<std::endl;
+    
+    rear_right_motor = wb_robot_get_device("rear right propeller");
+    wb_motor_set_position(rear_right_motor, INFINITY);
+    wb_motor_set_velocity(rear_right_motor, 1);
+    std::cout<<"[INFO] Got rear right motor"<<std::endl;
 
 }
 
-const double* Mavic::get_imu_values() {
-    return imu->getRollPitchYaw();
+const double* Mavic::get_gps_values(){
+    return wb_gps_get_values(gps);
 }
 
-const double* Mavic::get_gps_values() {
-    return gps->getValues();
+const double* Mavic::get_gyro_values(){
+    return wb_gyro_get_values(gyro);
 }
 
-const double* Mavic::get_gyro_values() {
-    return gyro->getValues();
+const double* Mavic::get_imu_values(){
+    return wb_inertial_unit_get_roll_pitch_yaw(imu);
 }
 
-double Mavic::get_time() {
-    return getTime();
+const unsigned char* Mavic::get_image(){
+    return wb_camera_get_image(camera);
 }
 
-void Mavic::set_rotor_speed(const double* rotor_speeds) {
-    double fl_speed, fr_speed, rl_speed, rr_speed;
-    fl_speed = rotor_speeds[0];
-    fr_speed = rotor_speeds[1];
-    rl_speed = rotor_speeds[2];
-    rr_speed = rotor_speeds[3];
+void Mavic::set_motor_speed(const double* speeds){
+    wb_motor_set_velocity(front_left_motor, speeds[0]);
+    wb_motor_set_velocity(front_right_motor, -speeds[1]);
+    wb_motor_set_velocity(rear_left_motor, -speeds[2]);
+    wb_motor_set_velocity(rear_right_motor, speeds[3]);
+}
 
-    front_left_motor->setVelocity(fl_speed);
-    front_right_motor->setVelocity(fr_speed);
-    rear_left_motor->setVelocity(rl_speed);
-    rear_right_motor->setVelocity(rr_speed);
+int Mavic::robot_step(){
+    return wb_robot_step(timestep);
+}
+
+double Mavic::get_time(){
+    return wb_robot_get_time();
+}
+
+void Mavic::save_image(const char* filename, int quality){
+    int ret = wb_camera_save_image(camera, filename, quality);
 }
