@@ -1,6 +1,6 @@
+build
 .vscode
 outputs
 images
 weights
 __pycache__
-build
