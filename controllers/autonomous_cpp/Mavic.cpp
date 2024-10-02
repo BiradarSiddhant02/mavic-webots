@@ -1,73 +1,76 @@
-#include "Mavic.h"
+#include "Mavic.hpp"
 
 #include <iostream>
 #include <tuple>
+#include <limits>
 
-#include <webots/Robot.h>
-#include <webots/Camera.h>
-#include <webots/GPS.h>
-#include <webots/Gyro.h>
-#include <webots/InertialUnit.h>
+#include <webots/Robot.hpp>
+#include <webots/Camera.hpp>
+#include <webots/GPS.hpp>
+#include <webots/Gyro.hpp>
+#include <webots/InertialUnit.hpp>
 
 Mavic::Mavic() {
     // Initialize Robot
-    drone = new Robot();
-    timestep = drone->getBasicTimeStep();
+    timestep = getBasicTimeStep();
 
     // Get Camera
-    camera = drone->getDevice("camera");
+    camera = getCamera("camera");
     camera->enable(timestep);
 
     // Get IMU
-    imu = drone->getDevice("inertial unit");
+    imu = getInertialUnit("inertial unit");
     imu->enable(timestep);
 
     // Get Gyro
-    gyro = drone->getDevice("gyro");
+    gyro = getGyro("gyro");
     gyro->enable(timestep);
 
     // Get GPS
-    gps = drone->getDevice("gps");
+    gps = getGPS("gps");
     gps->enable(timestep);
 
     // Get Propellers
-    front_left_motor = drone->getDevice("front left propeller");
-    front_right_motor = drone->getDevice("front right propeller");
-    rear_left_motor = drone->getDevice("rear left propeller");
-    rear_right_motor = drone->getDevice("rear right propeller");
+    front_left_motor = getMotor("front left propeller");
+    front_left_motor->setPosition(std::numeric_limits<double>::infinity());
+    front_left_motor->setVelocity(1.);
 
-    motors = {
-        front_left_motor,
-        front_right_motor,
-        rear_left_motor,
-        rear_right_motor
-    };
+    front_right_motor = getMotor("front right propeller");
+    front_right_motor->setPosition(std::numeric_limits<double>::infinity());
+    front_right_motor->setVelocity(1.);
 
-    for (auto& motor : motors) {
-        motor->setPosition(INFINITY);  // Set motors to velocity mode
-        motor->setVelocity(1.0);        // Initial velocity for motors
-    }
+    rear_left_motor = getMotor("rear left propeller");
+    rear_left_motor->setPosition(std::numeric_limits<double>::infinity());
+    rear_left_motor->setVelocity(1.);
+
+    rear_right_motor = getMotor("rear right propeller");
+    rear_right_motor->setPosition(std::numeric_limits<double>::infinity());
+    rear_left_motor->setVelocity(1.);
+
 }
 
-std::tuple<double, double, double> Mavic::get_imu_values() {
+const double* Mavic::get_imu_values() {
     return imu->getRollPitchYaw();
 }
 
-std::tuple<double, double, double> Mavic::get_gps_values() {
+const double* Mavic::get_gps_values() {
     return gps->getValues();
 }
 
-std::tuple<double, double, double> Mavic::get_gyro_values() {
+const double* Mavic::get_gyro_values() {
     return gyro->getValues();
 }
 
 double Mavic::get_time() {
-    return drone->getTime();
+    return getTime();
 }
 
-void Mavic::set_rotor_speed(const std::tuple<double, double, double, double>& speed_vector) {
+void Mavic::set_rotor_speed(const double* rotor_speeds) {
     double fl_speed, fr_speed, rl_speed, rr_speed;
-    std::tie(fl_speed, fr_speed, rl_speed, rr_speed) = speed_vector;
+    fl_speed = rotor_speeds[0];
+    fr_speed = rotor_speeds[1];
+    rl_speed = rotor_speeds[2];
+    rr_speed = rotor_speeds[3];
 
     front_left_motor->setVelocity(fl_speed);
     front_right_motor->setVelocity(fr_speed);
