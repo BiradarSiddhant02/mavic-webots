@@ -3,4 +3,4 @@ outputs
 images
 weights
 __pycache__
-/home/sidd/Documents/mavic/controllers/autonomous_cpp/build
+build
