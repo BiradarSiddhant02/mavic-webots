@@ -11,6 +11,12 @@ from constants import (
 from loguru import logger
 from utils import calculate_pid_altitude, process_image, clamp_motor_speed
 from model import DepthModel
+import threading
+
+def depth_inference(depth_model, img_tensor, depth_output):
+    with torch.no_grad():
+        depth = depth_model(img_tensor)
+        depth_output.append(depth.cpu().numpy())
 
 def main():
     mavic = Mavic()
@@ -30,6 +36,8 @@ def main():
     depth_model.load_state_dict(torch.load("weights/TFL_5_3.pth", weights_only=True, map_location=device))
     depth_model.eval()
     logger.info("Depth Model Loaded")
+
+    depth_output = []
 
     while mavic.step_robot() <= MAX_SIMULATION_TIME:
         current_time = mavic.get_time()
@@ -68,8 +76,12 @@ def main():
         image_width, image_height = mavic.camera.getWidth(), mavic.camera.getHeight()
         img_tensor = process_image(raw_image, image_width, image_height, device)
 
-        with torch.no_grad():
-            depth = depth_model(img_tensor)
+        # Start a new thread for depth inference
+        depth_thread = threading.Thread(target=depth_inference, args=(depth_model, img_tensor, depth_output))
+        depth_thread.start()
+
+        # Join the thread if you need to wait for it to finish
+        # depth_thread.join()  # Uncomment if you want to wait for depth inference to complete
 
 if __name__ == "__main__":
     main()
