@@ -23,43 +23,35 @@ Mavic::Mavic() {
     // Camera
     camera = wb_robot_get_device("camera");
     wb_camera_enable(camera, timestep);
-    std::cout<<"[INFO] Got Camera"<<std::endl;
 
     // GPS
     gps = wb_robot_get_device("gps");
     wb_gps_enable(gps, timestep);
-    std::cout<<"[INFO] Got GPS"<<std::endl;
 
     // Gyro
     gyro = wb_robot_get_device("gyro");
     wb_gyro_enable(gyro, timestep);
-    std::cout<<"[INFO] Got Gyro"<<std::endl;
 
     // IMU
     imu = wb_robot_get_device("inertial unit");
     wb_inertial_unit_enable(imu, timestep);
-    std::cout<<"[INFO] Got IMU"<<std::endl;
 
     // ---Initialize all motors---
     front_left_motor = wb_robot_get_device("front left propeller");
     wb_motor_set_position(front_left_motor, INFINITY);
     wb_motor_set_velocity(front_left_motor, 1);
-    std::cout<<"[INFO] Got front left motor"<<std::endl;
     
     front_right_motor = wb_robot_get_device("front right propeller");
     wb_motor_set_position(front_right_motor, INFINITY);
     wb_motor_set_velocity(front_right_motor, 1);
-    std::cout<<"[INFO] Got front right motor"<<std::endl;
     
     rear_left_motor = wb_robot_get_device("rear left propeller");
     wb_motor_set_position(rear_left_motor, INFINITY);
     wb_motor_set_velocity(rear_left_motor, 1);
-    std::cout<<"[INFO] Got rear left motor"<<std::endl;
     
     rear_right_motor = wb_robot_get_device("rear right propeller");
     wb_motor_set_position(rear_right_motor, INFINITY);
     wb_motor_set_velocity(rear_right_motor, 1);
-    std::cout<<"[INFO] Got rear right motor"<<std::endl;
 
 }
 

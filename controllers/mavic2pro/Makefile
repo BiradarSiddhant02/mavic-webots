@@ -12,19 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Webots Makefile system 
-# #
-# # You may add some variable definitions hereafter to customize the build process
-# # See documentation in $(WEBOTS_HOME_PATH)/resources/Makefile.include
+# Webots Makefile system
+#
+# You may add some variable definitions hereafter to customize the build process
+# See documentation in $(WEBOTS_HOME_PATH)/resources/Makefile.include
 
 
-CXX_SOURCES = autonomous_cpp.cpp Mavic.cpp 
-INCLUDE = -I"include/" -I"/usr/local/webots/include/controller/cpp/" -I"/usr/local/include/"
-LFLAGS = -Wno-unused-variable
-USE_C_API = true
-CFLAGS = -Ofast -pthread
-
-### Do not modify: this includes Webots global Makefile.include
+# Do not modify the following: this includes Webots global Makefile.include
 null :=
 space := $(null) $(null)
 WEBOTS_HOME_PATH?=$(subst $(space),\ ,$(strip $(subst \,/,$(WEBOTS_HOME))))

@@ -58,7 +58,3 @@ class Mavic:
 
     def get_image(self) -> List[List[List[int]]]:
         return self.camera.getImage()
-    
-    def step_robot(self) -> int:
-        """Increments the simulation step."""
-        return self.drone.step(self.timestep)

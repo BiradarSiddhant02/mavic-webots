@@ -11,8 +11,11 @@
 #define K_ROLL_P 50.0                 // Proportional constant for roll control
 #define K_PITCH_P 30.0                // Proportional constant for pitch control
 
-#define MAX_SIMULATION_TIME 99.99     // Maximum Simulation Time
+#define MAX_SIMULATION_TIME 10.     // Maximum Simulation Time
 #define MAX_MOTOR_SPEED 576.           // Maximum rotor speed
 #define MAX_STEP_LENGTH 10            // Seconds per altitude
+
+#define SAMPLING_PERIOD .1              // Time period for simulation data sampling
+#define DATA_PRECISION 4                // Precision for simulation data
 
 #endif

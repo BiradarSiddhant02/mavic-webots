@@ -43,4 +43,10 @@ class Mavic{
         int robot_step();
 };
 
+typedef struct sensor_data{
+    const double* gps_data;
+    const double* imu_data;
+    const double* gyro_data;
+} SensorData;
+
 #endif // MAVIC_H
