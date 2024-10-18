@@ -1,10 +1,11 @@
-from controller import Robot, Camera, GPS, InertialUnit, Motor, LED
+from controller import Robot, Supervisor    # type: ignore
 from typing import Tuple, List
 
-class Mavic:
-    def __init__(self):
-        # Initialize the Robot
-        self.drone = Robot()
+class Mavic(Supervisor):
+    def __init__(self, robot: Robot):
+        # super().__init__()
+        self.drone = robot
+        
         self.timestep = int(self.drone.getBasicTimeStep())
 
         # Enable Camera
@@ -35,6 +36,7 @@ class Mavic:
             motor.setPosition(float('inf'))  # Set motors to velocity control mode
             motor.setVelocity(0.0)  # Initialize motor velocity to zero
 
+
     def get_imu_values(self) -> Tuple[float, float, float]:
         """Returns the roll, pitch, and yaw values from the IMU."""
         return self.imu.getRollPitchYaw()
@@ -58,3 +60,11 @@ class Mavic:
 
     def get_image(self) -> List[List[List[int]]]:
         return self.camera.getImage()
+    
+    def step_robot(self) -> int:
+        """Increments the simulation step."""
+        return self.drone.step(self.timestep)
+    
+    def reset(self) -> None:
+        self.simulationReset()
+        self.simulationResetPhysics()

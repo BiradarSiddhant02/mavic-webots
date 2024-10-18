@@ -1,0 +1,53 @@
+def train_episode(
+        drone: Mavic,
+        controller: ControlNet,
+        scale_vec: Tuple[float],
+        target_state: Tuple[float],
+) -> torch.tensor:
+    
+    previous_error = tuple([0.] * len(target_state))
+    cumulative_error = tuple([0.] * len(target_state))  
+    episode_loss = torch.tensor(0., dtype=torch.float32, requires_grad=True)  
+
+    logger.info("Starting training episode...")  # Log episode start
+
+    current_time = drone.get_time()
+    while current_time - drone.get_time() <= (drone.timestep * NUM_STEPS):
+        drone.reset()
+        state_vec = torch.tensor(
+            read_sensors(), dtype=torch.float32
+        ).flatten().unsqueeze(0)
+
+        rotor_speed_vec = controller(state_vec).squeeze()
+
+        drone.set_rotor_speed(
+            (
+                clamp(K_VERTICAL_THRUST + float(rotor_speed_vec[0]), -MAX_MOTOR_VELOCITY, MAX_MOTOR_VELOCITY),
+                clamp(K_VERTICAL_THRUST + float(rotor_speed_vec[1]), -MAX_MOTOR_VELOCITY, MAX_MOTOR_VELOCITY),
+                clamp(K_VERTICAL_THRUST + float(rotor_speed_vec[2]), -MAX_MOTOR_VELOCITY, MAX_MOTOR_VELOCITY),
+                clamp(K_VERTICAL_THRUST + float(rotor_speed_vec[3]), -MAX_MOTOR_VELOCITY, MAX_MOTOR_VELOCITY)
+            )
+        )
+
+        state_vec = read_sensors()
+        state_vec = tuple(val for sensor in state_vec for val in sensor)
+
+        relative_error = tuple(abs(target - state) for target, state in zip(target_state, state_vec))
+        cumulative_error = tuple(cum_err + abs_err for cum_err, abs_err in zip(cumulative_error, relative_error))
+
+        error_vec = torch.cat(
+            (
+                torch.tensor(relative_error, dtype=torch.float32),
+                torch.tensor(cumulative_error, dtype=torch.float32),
+                torch.tensor(previous_error, dtype=torch.float32)
+            )
+        ).unsqueeze(0)
+
+        loss = torch.dot(error_vec.squeeze(), torch.tensor(scale_vec, dtype=torch.float32))
+        episode_loss = episode_loss + loss
+
+        previous_error = relative_error
+
+    # logger.info(f"Episode {epi + 1}/{NUM_STEPS}, Loss: {episode_loss.item()}")  # Log the loss
+
+    return episode_loss

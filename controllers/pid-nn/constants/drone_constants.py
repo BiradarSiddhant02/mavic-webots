@@ -1,4 +1,4 @@
-# constants.py
+# drone_constants.py
 
 # Thrust and stabilization constants
 K_VERTICAL_THRUST = 68.5       # Thrust value to lift the drone
@@ -24,5 +24,6 @@ K_ROLL_P = 50.0                  # Proportional constant for roll control
 K_PITCH_P = 30.0                 # Proportional constant for pitch control
 
 # Motor and simulation constants
-MAX_SIMULATION_TIME = 9.99
 MAX_MOTOR_VELOCITY = 576.0      # Maximum motor velocity
+
+

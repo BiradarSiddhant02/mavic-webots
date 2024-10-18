@@ -19,6 +19,15 @@ def clamp_motor_speed(input_speed):
 def process_image(raw_image, width, height, device):
     # Converts a raw image to a PyTorch tensor after resizing and moving to the specified device
     img_array = np.frombuffer(raw_image, dtype=np.uint8).reshape((height, width, 4))[:, :, :3]
-    img_resized = cv2.resize(img_array, (60, 80), interpolation=cv2.INTER_AREA)
+    img_resized = cv2.resize(img_array, (60 * 4, 80 * 4), interpolation=cv2.INTER_AREA)
     img_tensor = torch.from_numpy(img_resized).float().permute(2, 0, 1).unsqueeze(0).to(device)
     return img_tensor
+
+# Function to perform depth inference asynchronously
+def depth_inference_batch(depth_model, img_tensors, buffer, lock):
+    # Perform depth inference on a batch of images with mixed precision
+    with torch.no_grad():
+        with torch.amp.autocast():
+            depths = depth_model(torch.stack(img_tensors))
+        with lock:
+            buffer.extend([depth.cpu().numpy() for depth in depths])

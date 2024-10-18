@@ -1,10 +1,11 @@
-from controller import Robot, Camera, GPS, InertialUnit, Motor, LED
+from controller import Robot, Camera, GPS, InertialUnit, Motor, LED, Supervisor
 from typing import Tuple, List
 
-class Mavic:
-    def __init__(self):
+class Mavic(Supervisor):
+    def __init__(self, robot: Robot):
+        super().__init__()
         # Initialize the Robot
-        self.drone = Robot()
+        self.drone = robot
         self.timestep = int(self.drone.getBasicTimeStep())
 
         # Enable Camera
@@ -62,3 +63,7 @@ class Mavic:
     def step_robot(self) -> int:
         """Increments the simulation step."""
         return self.drone.step(self.timestep)
+    
+    def reset(self) -> None:
+        self.simulationReset()
+        self.simulationResetPhysics()
