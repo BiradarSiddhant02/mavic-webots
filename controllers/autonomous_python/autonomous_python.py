@@ -53,6 +53,8 @@ def main():
         current_time = mavic.get_time()
         if current_time >= MAX_SIMULATION_TIME:
             mavic.reset()
+            integral_altitude_error = 0.0
+            previous_altitude_error = 0.0
 
         # Update target altitude every 10 seconds
         if current_time - change_time >= 10.0:

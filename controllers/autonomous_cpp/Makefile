@@ -19,7 +19,7 @@
 
 
 CXX_SOURCES = autonomous_cpp.cpp Mavic.cpp 
-INCLUDE = -I"include/" -I"/usr/local/webots/include/controller/cpp/" -I"/usr/local/include/"
+INCLUDE = -I"include/" -I"C:\Users\HP\AppData\Local\Programs\Webots\include\controller\cpp"
 LFLAGS = -Wno-unused-variable
 USE_C_API = true
 CFLAGS = -Ofast -pthread

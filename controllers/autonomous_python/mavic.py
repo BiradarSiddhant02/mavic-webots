@@ -65,5 +65,30 @@ class Mavic(Supervisor):
         return self.drone.step(self.timestep)
     
     def reset(self) -> None:
+        """Reset the simulation with complete reinitialization of components."""
+        # Reset simulation and physics
         self.simulationReset()
         self.simulationResetPhysics()
+        
+        self.drone.step(self.timestep)
+        
+        # Reinitialize sensors by disabling and enabling them to reset sensor states
+        self.camera.disable()
+        self.imu.disable()
+        self.gyro.disable()
+        self.gps.disable()
+        
+        self.camera.enable(self.timestep)
+        self.imu.enable(self.timestep)
+        self.gyro.enable(self.timestep)
+        self.gps.enable(self.timestep)
+        
+        # Reinitialize motor settings and reset motor velocities
+        for motor in self.motors:
+            motor.setPosition(float('inf'))
+            motor.setVelocity(0.0)
+        
+        # Add a small delay step to fully apply the reset before resuming control
+        for _ in range(5):
+            self.drone.step(self.timestep)
+

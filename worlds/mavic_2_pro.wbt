@@ -21,7 +21,10 @@ WorldInfo {
     "After the drone has taken off, you can control it with the keyboard of your computer."
   ]
   title "DJI Mavic 2 PRO demo"
+  ERP 0.1
   basicTimeStep 8
+  FPS 40
+  physicsDisableTime 0
   defaultDamping Damping {
     linear 0.5
     angular 0.5
