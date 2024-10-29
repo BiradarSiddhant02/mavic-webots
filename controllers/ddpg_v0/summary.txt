@@ -1,0 +1,6 @@
+drone is learning to stay where ever it is to maximize reward
+
+try:
+1. punish agressive control efforts (absolute value of previous action - current action)
+2. punish not moving (absolute value of previous state - current state)
+3. change action vector to thrust, roll, pitch, yaw 
