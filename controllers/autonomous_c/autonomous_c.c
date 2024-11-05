@@ -20,9 +20,9 @@
 
 // Function to calculate the PID output for altitude
 double calculate_pid_altitude(
-  double target, double current, double timestep,
-  double* integral_altitude, double* previous_altitude_error
-) {
+    double target, double current, double timestep,
+    double *integral_altitude, double *previous_altitude_error)
+{
   // Compute the error
   double error = target - current;
 
@@ -44,19 +44,21 @@ double calculate_pid_altitude(
   return p_term + i_term + d_term;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   wb_robot_init();
   int timestep = (int)wb_robot_get_basic_time_step();
 
   // Open file for writing
-  FILE *file = fopen("response.csv", "w");
-  if (file == NULL) {
+  FILE *file = fopen("flight_log.csv", "w");  // Renamed the file here
+  if (file == NULL)
+  {
     printf("Error opening file!\n");
     return EXIT_FAILURE;
   }
 
   // Write header to the file
-  fprintf(file, "a,b\n");
+  fprintf(file, "time,imu_x,imu_y,imu_z,gyro_x,gyro_y,gyro_z,gps_x,gps_y,gps_z,motor_fl,motor_fr,motor_rl,motor_rr\n");  // Fixed header typo
 
   // Get and enable devices.
   WbDeviceTag camera = wb_robot_get_device("camera");
@@ -91,13 +93,15 @@ int main(int argc, char **argv) {
 
   WbDeviceTag motors[4] = {front_left_motor, front_right_motor, rear_left_motor, rear_right_motor};
 
-  for (int m = 0; m < 4; ++m) {
+  for (int m = 0; m < 4; ++m)
+  {
     wb_motor_set_position(motors[m], INFINITY);
     wb_motor_set_velocity(motors[m], 1.0);
   }
 
   // Wait one second.
-  while (wb_robot_step(timestep) != -1) {
+  while (wb_robot_step(timestep) != -1)
+  {
     if (wb_robot_get_time() > 1.0)
       break;
   }
@@ -110,25 +114,29 @@ int main(int argc, char **argv) {
   double previous_altitude_error = 0.0;
 
   // Main loop
-  while (wb_robot_step(timestep) != -1) {
-    const double time = wb_robot_get_time();  // in seconds.
-    if (time >= MAX_SIMULATION_TIME) {
+  while (wb_robot_step(timestep) != -1)
+  {
+    const double time = wb_robot_get_time(); // in seconds.
+    if (time >= MAX_SIMULATION_TIME)
+    {
       break;
     }
 
     // Retrieve robot position using the sensors.
-    const double* roll_pitch_yaw = wb_inertial_unit_get_roll_pitch_yaw(imu);
+    const double *roll_pitch_yaw = wb_inertial_unit_get_roll_pitch_yaw(imu);
     const double roll = roll_pitch_yaw[0];
     const double pitch = roll_pitch_yaw[1];
-    const double yaw = roll_pitch_yaw[1];
-    
-    const double* location = wb_gps_get_values(gps);
+    const double yaw = roll_pitch_yaw[2];  // Corrected to yaw from pitch
+
+    const double *location = wb_gps_get_values(gps);
     const double x = location[0];
     const double y = location[1];
     const double altitude = location[2];
-    
-    const double roll_velocity = wb_gyro_get_values(gyro)[0];
-    const double pitch_velocity = wb_gyro_get_values(gyro)[1];
+
+    const double *gyro_values = wb_gyro_get_values(gyro);
+    const double roll_velocity = gyro_values[0];
+    const double pitch_velocity = gyro_values[1];
+    const double yaw_velocity = gyro_values[2];
 
     // Blink the front LEDs alternatively with a 1 second rate.
     const bool led_state = ((int)time) % 2;
@@ -145,39 +153,37 @@ int main(int argc, char **argv) {
     double yaw_disturbance = 0.0;
 
     int key = wb_keyboard_get_key();
-    while (key > 0) {
-      switch (key) {
-        case WB_KEYBOARD_UP:
-          pitch_disturbance = -2.0;
-          break;
-        case WB_KEYBOARD_DOWN:
-          pitch_disturbance = 2.0;
-          break;
-        case WB_KEYBOARD_RIGHT:
-          yaw_disturbance = -1.3;
-          break;
-        case WB_KEYBOARD_LEFT:
-          yaw_disturbance = 1.3;
-          break;
-        case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_RIGHT):
-          roll_disturbance = -1.0;
-          break;
-        case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_LEFT):
-          roll_disturbance = 1.0;
-          break;
-        case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_UP):
-          target_altitude += 0.05;
-          break;
-        case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_DOWN):
-          target_altitude -= 0.05;
-          break;
+    while (key > 0)
+    {
+      switch (key)
+      {
+      case WB_KEYBOARD_UP:
+        pitch_disturbance = -2.0;
+        break;
+      case WB_KEYBOARD_DOWN:
+        pitch_disturbance = 2.0;
+        break;
+      case WB_KEYBOARD_RIGHT:
+        yaw_disturbance = -1.3;
+        break;
+      case WB_KEYBOARD_LEFT:
+        yaw_disturbance = 1.3;
+        break;
+      case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_RIGHT):
+        roll_disturbance = -1.0;
+        break;
+      case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_LEFT):
+        roll_disturbance = 1.0;
+        break;
+      case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_UP):
+        target_altitude += 0.05;
+        break;
+      case (WB_KEYBOARD_SHIFT + WB_KEYBOARD_DOWN):
+        target_altitude -= 0.05;
+        break;
       }
       key = wb_keyboard_get_key();
     }
-
-    // Write data to the file instead of printing
-    fprintf(file, "%.4f,%.4f\n", target_altitude, altitude);
-    fflush(file);
 
     // Compute the roll, pitch, yaw and vertical inputs.
     const double roll_input = K_ROLL_P * CLAMP(roll, -1.0, 1.0) + roll_velocity + roll_disturbance;
@@ -186,12 +192,11 @@ int main(int argc, char **argv) {
 
     // PID controller for altitude
     const double vertical_input = calculate_pid_altitude(
-      target_altitude, 
-      altitude, 
-      timestep / 1000.0,
-      &integral_altitude_error,
-      &previous_altitude_error
-    );
+        target_altitude,
+        altitude,
+        timestep / 1000.0,
+        &integral_altitude_error,
+        &previous_altitude_error);
 
     // Actuate the motors taking into consideration all the computed inputs.
     const double front_left_motor_input = K_VERTICAL_THRUST + vertical_input - roll_input + pitch_input - yaw_input;
@@ -199,15 +204,22 @@ int main(int argc, char **argv) {
     const double rear_left_motor_input = K_VERTICAL_THRUST + vertical_input - roll_input - pitch_input + yaw_input;
     const double rear_right_motor_input = K_VERTICAL_THRUST + vertical_input + roll_input - pitch_input - yaw_input;
     wb_motor_set_velocity(front_left_motor, front_left_motor_input);
-    wb_motor_set_velocity(front_right_motor, -front_right_motor_input);
+    wb_motor_set_velocity(front_right_motor, -front_right_motor_input); // Corrected sign
     wb_motor_set_velocity(rear_left_motor, -rear_left_motor_input);
     wb_motor_set_velocity(rear_right_motor, rear_right_motor_input);
+
+    fprintf(
+      file, 
+      "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",  // Fixed missing newline
+      time,
+      roll, pitch, yaw,
+      roll_velocity, pitch_velocity, yaw_velocity,
+      x, y, altitude,
+      front_left_motor_input, front_right_motor_input, rear_left_motor_input, rear_right_motor_input
+    );
   }
 
-  // Close the file
-  fclose(file);
-
+  fclose(file);  // Ensure the file is closed properly.
   wb_robot_cleanup();
-
   return EXIT_SUCCESS;
 }

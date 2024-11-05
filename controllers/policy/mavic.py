@@ -1,11 +1,11 @@
-from controller import Robot, Supervisor    # type: ignore
+from controller import Robot, Camera, GPS, InertialUnit, Motor, LED, Supervisor
 from typing import Tuple, List
 
 class Mavic(Supervisor):
     def __init__(self, robot: Robot):
-        # super().__init__()
+        super().__init__()
+        # Initialize the Robot
         self.drone = robot
-        
         self.timestep = int(self.drone.getBasicTimeStep())
 
         # Enable Camera
@@ -36,7 +36,6 @@ class Mavic(Supervisor):
             motor.setPosition(float('inf'))  # Set motors to velocity control mode
             motor.setVelocity(0.0)  # Initialize motor velocity to zero
 
-
     def get_imu_values(self) -> Tuple[float, float, float]:
         """Returns the roll, pitch, and yaw values from the IMU."""
         return self.imu.getRollPitchYaw()
@@ -66,5 +65,30 @@ class Mavic(Supervisor):
         return self.drone.step(self.timestep)
     
     def reset(self) -> None:
+        """Reset the simulation with complete reinitialization of components."""
+        # Reset simulation and physics
         self.simulationReset()
         self.simulationResetPhysics()
+        
+        self.drone.step(self.timestep)
+        
+        # Reinitialize sensors by disabling and enabling them to reset sensor states
+        self.camera.disable()
+        self.imu.disable()
+        self.gyro.disable()
+        self.gps.disable()
+        
+        self.camera.enable(self.timestep)
+        self.imu.enable(self.timestep)
+        self.gyro.enable(self.timestep)
+        self.gps.enable(self.timestep)
+        
+        # Reinitialize motor settings and reset motor velocities
+        for motor in self.motors:
+            motor.setPosition(float('inf'))
+            motor.setVelocity(0.0)
+        
+        # Add a small delay step to fully apply the reset before resuming control
+        for _ in range(5):
+            self.drone.step(self.timestep)
+

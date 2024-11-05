@@ -86,7 +86,7 @@ def main():
 
             # Wait for environment to update
             for _ in range(32 // mavic.timestep):
-                robot.step(mavic.timestep)
+                mavic.step_robot()
 
             # get new state
             next_state = get_state()
