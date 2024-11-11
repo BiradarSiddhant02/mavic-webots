@@ -21,9 +21,9 @@ def clamp(value, low, high):
 def main():
     integral_error = 0
     prev_error = 0
-    
+
     stabilization_count = 0
-    stabilization_threshold = 100 
+    stabilization_threshold = 100
 
     target_altitude = 1.0
 
@@ -36,19 +36,34 @@ def main():
     kp = 10
     ki = 0
     kd = 5.0
-    
+
     with open("flight_log.csv", mode="w", newline="") as file:
         writer = csv.writer(file)
-        
+
         # Write the header
-        writer.writerow([
-            "time", "imu_roll", "imu_pitch", "imu_yaw",
-            "gyro_roll_rate", "gyro_pitch_rate", "gyro_yaw_rate",
-            "gps_x", "gps_y", "gps_altitude",
-            "motor_fl", "motor_fr", "motor_rl", "motor_rr",
-            "target_altitude", "current_altitude",
-            "roll_disturbance", "pitch_disturbance", "yaw_disturbance"
-        ])
+        writer.writerow(
+            [
+                "time",
+                "imu_roll",
+                "imu_pitch",
+                "imu_yaw",
+                "gyro_roll_rate",
+                "gyro_pitch_rate",
+                "gyro_yaw_rate",
+                "gps_x",
+                "gps_y",
+                "gps_altitude",
+                "motor_fl",
+                "motor_fr",
+                "motor_rl",
+                "motor_rr",
+                "target_altitude",
+                "current_altitude",
+                "roll_disturbance",
+                "pitch_disturbance",
+                "yaw_disturbance",
+            ]
+        )
 
         while mavic.step_robot() != -1:
             imu = mavic.get_imu_values()
@@ -122,7 +137,7 @@ def main():
                     rear_right_motor_input,
                 )
             )
-            
+
             # Check if drone is within the stabilization threshold
             if abs(target_altitude - z) < 0.01:  # Adjust tolerance as needed
                 stabilization_count += 1
@@ -133,16 +148,30 @@ def main():
             if stabilization_count >= stabilization_threshold:
                 integral_error = 0
                 prev_error = 0
-                
-            writer.writerow([
-                mavic.get_time(), roll, pitch, yaw,
-                roll_rate, pitch_rate, yaw_rate,
-                x, y, z,
-                front_left_motor_input, front_right_motor_input,
-                rear_left_motor_input, rear_right_motor_input,
-                target_altitude, z,
-                roll_disturbance, pitch_disturbance, yaw_disturbance
-            ])
+
+            writer.writerow(
+                [
+                    mavic.get_time(),
+                    roll,
+                    pitch,
+                    yaw,
+                    roll_rate,
+                    pitch_rate,
+                    yaw_rate,
+                    x,
+                    y,
+                    z,
+                    front_left_motor_input,
+                    front_right_motor_input,
+                    rear_left_motor_input,
+                    rear_right_motor_input,
+                    target_altitude,
+                    z,
+                    roll_disturbance,
+                    pitch_disturbance,
+                    yaw_disturbance,
+                ]
+            )
 
 
 main()

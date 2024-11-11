@@ -2,9 +2,11 @@ import torch
 import torch.nn as nn
 from typing import Tuple
 
+
 def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
 
 class Actor(nn.Module):
     def __init__(
@@ -23,8 +25,8 @@ class Actor(nn.Module):
 
         self._initialize_weights()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.network(x)
+    def forward(self, x: torch.Tensor) -> torch.distributions.Categorical:
+        return torch.distributions.Categorical(self.network(x).squeeze(0))
 
     def save(self, path: str) -> None:
         torch.save(self.state_dict(), path)
@@ -56,9 +58,9 @@ class Critic(nn.Module):
         self._initialize_weights()
 
     def forward(
-        self, state_vec: torch.Tensor, action_vec: torch.Tensor
+        self, state_vec: torch.Tensor
     ) -> torch.Tensor:
-        return self.network(torch.cat((state_vec, action_vec), dim=1))
+        return self.network(state_vec)
 
     def save(self, path: str) -> None:
         torch.save(self.state_dict(), path)
