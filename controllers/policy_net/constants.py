@@ -9,7 +9,7 @@ LEARNING_RATE = 0.0015
 
 REWARD_SCALE = 10
 
-TRAIN_MODE = False
+TRAIN_MODE = True
 
 # --- PPO Parameters --- #
 NUM_EPISODES = 1000
