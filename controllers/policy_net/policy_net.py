@@ -127,6 +127,7 @@ def main() -> None:
     if TRAIN_MODE:
         reward_history = []
         best_reward = float("-inf")
+        logger.info("Staring in Training mode.")
 
         policy_net.train()
 
@@ -246,12 +247,12 @@ def main() -> None:
 
                 reward, done = calculate_reward(state_buffer, action_buffer)
                 rewards.append(reward)
-                reward_history.append(reward)
 
                 episode_reward += reward
 
                 current_step += 1
 
+            reward_history.append(episode_reward)
             most_common_action = Counter(action_buffer).most_common(1)[0][0]
             logger.info(
                 f"Episode: {episode:04d}, Reward: {episode_reward:.4f}, Most common action: {most_common_action}"
@@ -278,6 +279,7 @@ def main() -> None:
             policy_optimizer.step()
 
     else:
+        logger.info("Starting in Evaluation mode.")
         weights = os.listdir("policy_net_checkpoints")
         weights.sort()
         latest_weights = weights[-1]
